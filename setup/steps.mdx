@@ -115,9 +115,7 @@ re-run.
 
 ## When a step should be a file step instead
 
-If your "step" is really *"this file needs to exist with this content"* —
-a `.env.local`, a config file, a certificate — don't write it with `cat
-<<EOF >file`. Use a [file step](./files.md) instead.
+If your "step" is really *"this file needs to exist with this content"* — a `.env.local`, a config file, a certificate — don't write it with `cat &lt;&lt; EOF &gt; file`. Use a [file step](./files.md) instead.
 
 ![Screenshot of a file step variant in the editor. Looks like a regular step card but instead of a Command input, it shows a "File" label badge in the header, a file icon followed by the destination path in monospace (e.g. `.env.local`), and the descriptive text "— uploaded by the agent, replayed from storage". The Checks sub-section below shows a single auto-attached path_exists check.](./images/step-file-card.png)
 
