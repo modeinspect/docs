@@ -42,29 +42,6 @@ There's no scoping or per-step env — everything is global to the run.
 - Long blobs (certificates, private keys) — use a [file step](./files.md)
   instead
 
-## ⚠️ The secrets caveat
-
-**Env vars are stored in plaintext in our database.** They are not
-encrypted at rest with a per-project key, they aren't masked in our logs,
-and anyone on your team with project access can read them in the editor.
-
-The same is true of [file step](./files.md) contents.
-
-The threat model to assume: anything you put here has roughly the same
-exposure as committing it to a private repo. If that's not okay for a
-given value, don't put it here.
-
-In practice, that means:
-
-- Use **scoped / restricted** keys — a Stripe test key, not your live
-  account key
-- Use **short-lived** keys where you can — rotate them on a schedule you
-  set elsewhere
-- Use **per-environment** values — never paste a production env into a
-  setup config
-- For values where the above isn't possible, talk to your security people
-  before adding them
-
 ## Working with env vars in your steps
 
 Inside a setup step, env vars are just regular shell variables, so:
