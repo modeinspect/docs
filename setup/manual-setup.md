@@ -1,0 +1,131 @@
+# Manual setup
+
+Manual setup means you fill in the config by hand instead of asking the
+agent to. You'd do this if:
+
+- You already know exactly what your project needs (faster than waiting
+  for the agent)
+- The agent ran but couldn't finish, and you can finish it
+- Your project has unusual build steps the agent wouldn't infer
+  (codegen, native compilation, custom CLIs)
+- You need to upload secret files (`.env.local`, certificates) the agent
+  can't fetch
+
+## The mental model
+
+Imagine cloning your repo onto a brand-new Linux machine that has only Git,
+Node, common build tools, and not much else. What would you do, in order,
+to get the dev server running on a known port?
+
+That sequence is your setup config. Write it down literally.
+
+```
+1. pnpm install
+2. (drop in .env.local with the API base URL)
+3. pnpm db:generate
+4. pnpm dev   ← dev server, listens on 5173
+```
+
+Translated into the editor, that's three [steps](./steps.md), one [file
+step](./files.md), and a [dev server](./dev-server.md) entry. If any of
+those depend on values that aren't in the repo (an API key, a database
+URL), they go into [env vars](./env-vars.md).
+
+## What the sandbox gives you
+
+The sandbox is a small Linux VM (~1 vCPU, ~1 GB RAM) running on
+CodeSandbox infrastructure. Out of the box you get:
+
+- Standard Linux userland (`bash`, `zsh`, `git`, `curl`, common GNU tools)
+- Node.js with `npm`, `pnpm`, `yarn`, `bun` available
+- Network access (so installs and registry lookups work)
+- Your codebase, already cloned, at the project root
+
+What you don't get:
+
+- Root / sudo (no `apt-get install`)
+- Persistent state between sessions — every replay starts clean
+- A GUI or terminal you can interactively poke at
+- Custom OS packages or system services
+
+That last constraint is the biggest one: if your project needs a system
+binary that isn't already installed (a database server, a compiled native
+tool), you'll need to install it as part of a setup step, into a path you
+own — usually under `node_modules/.bin` or a similar project-local path.
+
+## The five sections
+
+Each section has its own page; this is the 30-second tour.
+
+### Steps
+
+Ordered shell commands. Each step has a name and a command, plus optional
+[checks](./checks.md). They run top-to-bottom; if a step fails, setup
+fails.
+
+→ [Read more](./steps.md)
+
+### Checks
+
+Predicates that prove a step did what you wanted. Each step can have any
+number of them. They serve **two** purposes:
+
+1. **Skip already-done work.** Before running a step, we run its checks. If
+   they all pass, we skip the step. This makes replays fast.
+2. **Verify the step worked.** After running a step, we run its checks
+   again. If any fail, the step is marked failed.
+
+→ [Read more](./checks.md)
+
+### File steps
+
+A step that writes a file from a blob you uploaded once. Used for files
+that aren't (and shouldn't be) in your repo — `.env.local`, dev
+certificates, generated config that's painful to recreate.
+
+→ [Read more](./files.md)
+
+### Dev server
+
+The command that starts your app, plus the port it listens on. Modeinspect
+runs this *after* all the steps succeed, then connects to the port.
+
+→ [Read more](./dev-server.md)
+
+### Environment variables
+
+Key/value pairs passed to every step's environment and to the dev server.
+This is where API keys, database URLs, and feature flags live.
+
+⚠️ Env vars are stored in plaintext in our database. Don't put secrets here
+that you wouldn't put into a regular config file. → [Read more](./env-vars.md)
+
+## How a setup run actually executes
+
+When we replay your config (every time someone opens the project in a fresh
+sandbox), here's what happens, in order:
+
+1. We provision a clean sandbox and clone your codebase into it.
+2. We download any **file step** assets and place them at their declared
+   destinations.
+3. For each **step**, in order:
+   1. Run all the step's **checks**. If they all pass, skip the step.
+   2. Otherwise, run the step's command (with all your env vars in scope).
+   3. Run all the step's checks **again**. If any fail, the run fails.
+4. Start the **dev server** (with your env vars).
+5. Probe the configured port. If it responds, the project is ready.
+
+If anything fails, the user opening the project sees the failure with the
+relevant logs and a path back to the editor.
+
+## Editing after the fact
+
+You can edit setup config any time from the dashboard's setup panel —
+add/remove steps, reorder them, change commands, adjust checks. Click
+**Verify** to replay the new config in a fresh sandbox; if it passes,
+**Save** writes it back as the canonical config for the project.
+
+Verifying without saving is safe — it doesn't affect anything until you hit
+save.
+
+![Screenshot of the dashboard's setup config panel in edit mode, with the Verify and Save buttons highlighted at the top. A note overlay points at the buttons: "Verify replays your config in a fresh sandbox; Save promotes it as the canonical setup once verification passes."](./images/manual-setup-verify-save.png)

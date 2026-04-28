@@ -1,0 +1,104 @@
+# Dev server
+
+The **dev server** is the command that starts your app once everything
+else is in place. It's the last thing setup does, and it's what we connect
+to when rendering your project in the preview.
+
+If steps and checks are about *getting your project ready*, the dev server
+is *what "ready" means in the end*: a process listening on a port that we
+can talk to.
+
+## What you configure
+
+| Field        | What it is                                                       |
+| ------------ | ---------------------------------------------------------------- |
+| **Command**  | The shell command that starts the server (`npm run dev`)         |
+| **Port**     | The port your server listens on (defaults to `3000`)             |
+
+That's it for the basic case. The two fields together tell us "run this,
+expect something on `localhost:<port>`".
+
+![Screenshot of the "Dev server" sub-section in the setup editor. Header reads "Dev server" in uppercase. Two inputs side by side: a wide "Command" input (with hint "The command that starts your dev server (e.g. npm run dev)") filled with `pnpm dev` in monospace, and a narrower "Port" input on the right (with hint "The port your dev server listens on") prefixed with a faint "localhost:" label and filled with `5173`.](./images/dev-server-editor.png)
+
+## Common patterns
+
+| Stack          | Command          | Port |
+| -------------- | ---------------- | ---- |
+| Next.js        | `pnpm dev`       | 3000 |
+| Vite           | `pnpm dev`       | 5173 |
+| Nuxt           | `pnpm dev`       | 3000 |
+| Astro          | `pnpm dev`       | 4321 |
+| Remix          | `pnpm dev`       | 3000 |
+| SvelteKit      | `pnpm dev`       | 5173 |
+
+These are defaults — yours might differ if your `package.json` script
+overrides the port (`vite --port 4000`, `next dev -p 4000`, etc.).
+
+## How we run it
+
+After all setup steps pass, we start the dev server:
+
+- **Working directory:** project root
+- **Shell:** `zsh -c "<your command>"`
+- **Environment:** all your configured [env vars](./env-vars.md), plus the
+  sandbox defaults
+
+We don't background it ourselves — your command should run in the
+foreground (which `npm run dev`, `pnpm dev`, etc. all do). If your command
+naturally daemonizes, wrap it in something that stays attached.
+
+## How we know it worked
+
+Once the command starts, we **probe the port** you configured. If
+something responds within the timeout window, the dev server is marked
+verified and your project is ready.
+
+If the probe fails, you'll see a "Dev server failed" panel in the editor
+with the server's stderr/stdout. The two most common causes:
+
+![Screenshot of the dev server editor in its failed state. The Command and Port inputs are at the top as usual, but below them a light-themed terminal block is rendered showing the dev server's stderr output (an error trace from a failed startup). The block's meta header reads "Dev server failed" in red.](./images/dev-server-failed.png)
+
+- **Wrong port.** The most common one. The command works, but your app is
+  listening on a different port than the one in your config. Fix the port
+  field.
+- **Server crashed at startup.** Missing env var, port already in use, bad
+  config. The output usually tells you which.
+
+You can edit and **Retry verification** without re-running the agent.
+
+## Picking the right command
+
+You almost always want the same command you'd type locally to start
+working — whatever you run in your `dev` script. **Don't** use:
+
+- Production build commands (`pnpm build`, `pnpm start`) — these don't
+  hot-reload, which defeats the point.
+- Bundler / build watchers without a server (`tsc --watch`,
+  `webpack --watch`) — they emit files but don't serve them.
+- Test watchers — same problem.
+
+If your project has a separate "API server" and "web frontend" in dev (a
+Next.js app talking to a Go backend, say), pick the one your **preview
+URL** points at. The other should be started as part of a setup step that
+backgrounds it (`./scripts/start-api &` and similar — though see the note
+below).
+
+## A note on multi-process dev setups
+
+The dev-server slot is for **one** foreground process. If your dev
+workflow needs multiple processes running simultaneously (frontend +
+backend, frontend + worker), use a **process manager** in your dev
+command:
+
+- `concurrently "pnpm api" "pnpm web"`
+- `npm-run-all -p api web`
+- A `Procfile` + `foreman` / `overmind`
+
+These aggregate multiple processes under a single foreground command,
+which is what we expect.
+
+## Port conflicts
+
+The sandbox is a fresh VM, so nothing else is listening when we start
+your server. Port conflicts inside a sandbox are almost always your own
+config — usually two of your processes trying to bind the same port.

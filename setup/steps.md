@@ -1,0 +1,146 @@
+# Setup steps
+
+A **step** is one shell command that contributes to getting your project
+into a runnable state. Steps run in order. If a step fails, setup fails.
+
+If you've used CI before (GitHub Actions, GitLab CI), this should feel
+familiar — a step is one entry in the job's command list.
+
+## What belongs as a step
+
+A step should be a command that **changes state in a way the next step
+depends on**. Good examples:
+
+- `pnpm install`
+- `pnpm db:generate`
+- `cargo build --release`
+- `make assets`
+- `mkdir -p data && cp seeds/* data/`
+
+Bad examples (don't add these — they don't do anything that affects later
+steps or the dev server):
+
+- `cd packages/web` — every step starts at the project root anyway
+- `ls -la` — diagnostic, not a contribution
+- `echo "starting install"` — a log line; we already log everything
+- `node --version` — checking for something is what [checks](./checks.md)
+  are for
+
+A useful test: if you removed the step, would something later break? If
+no, leave it out.
+
+## Anatomy of a step
+
+In the editor, each step has:
+
+| Field      | What it is                                                       |
+| ---------- | ---------------------------------------------------------------- |
+| **Name**   | A human label like "Install dependencies". Shows up in the UI.   |
+| **Command** | The actual shell command. Single line.                          |
+| **Checks** | Optional list of [checks](./checks.md) that prove it worked.    |
+
+You can drag steps to reorder them, and click the X to remove a step.
+
+![Screenshot of a single shell setup step in the editor. Left edge has a vertical drag handle (grip icon). The step shows: a status dot, a "Step name" input filled with "Install dependencies", a "pending" status pill on the right, a "Command" input below filled with `pnpm install`, then a "Checks" sub-section with one path_exists check on `node_modules` and an "Add check" button. A small X button on the right edge removes the step.](./images/step-shell-card.png)
+
+## How steps actually run
+
+For each step, in order:
+
+1. We run all the step's **checks** first.
+2. If every check passes, we **skip the step entirely** and continue.
+3. Otherwise, we run the step's **command**.
+4. After the command finishes (with exit code 0), we run the checks
+   **again**. If any of them fail this time, the step is marked failed and
+   setup stops.
+
+The skip-if-already-done behavior is what makes replays cheap. If
+`node_modules/` already exists from a cached layer, your `pnpm install`
+step just gets skipped.
+
+## Multi-line / chained commands
+
+The command field is a single shell line, but you can use `&&`, `;`, and
+pipes — it's executed under `zsh -c`. So this is fine:
+
+```sh
+mkdir -p generated && pnpm exec codegen --out generated/api.ts
+```
+
+If a step gets long enough that you'd reach for a script, write a small
+script in your repo and call it:
+
+```sh
+./scripts/setup-db.sh
+```
+
+## Working directory and shell
+
+- **Working directory:** the project root. If your real command needs to
+  run inside a subdir, prefix with `cd`: `cd packages/web && pnpm build`.
+- **Shell:** `zsh -c "<your command>"`. So shell features (subshells,
+  redirection, `$VAR` expansion) work normally.
+- **Environment:** the sandbox's environment plus all of your configured
+  [env vars](./env-vars.md). Your env vars override sandbox defaults.
+
+## Exit codes and failure
+
+A step "succeeds" when the command exits 0. Any non-zero exit means the
+step failed and setup stops.
+
+One quirk: an exit code of `1` is treated as soft-failure — we don't error
+out immediately, but we still re-run the checks afterward. If the checks
+pass anyway, the step is considered done. This handles tools like `grep`
+or `diff` that exit 1 to signal "no match" rather than "actually broken".
+
+For any other non-zero exit (2, 127, etc.), setup fails immediately and
+the user sees the command output.
+
+## Idempotency matters
+
+Steps are replayed every time a fresh sandbox spins up. Write commands
+that are safe to re-run:
+
+- ✅ `pnpm install` — does nothing if everything is already installed
+- ✅ `mkdir -p data` — `-p` makes it safe
+- ❌ `mv old new` — fails on the second run because `old` is gone
+- ❌ `git clone …` — fails if the directory already exists
+
+The fix for non-idempotent steps is usually a [check](./checks.md): tell
+us how to detect that the step was already done, and we'll skip the
+re-run.
+
+## When a step should be a file step instead
+
+If your "step" is really *"this file needs to exist with this content"* —
+a `.env.local`, a config file, a certificate — don't write it with `cat
+<<EOF >file`. Use a [file step](./files.md) instead.
+
+![Screenshot of a file step variant in the editor. Looks like a regular step card but instead of a Command input, it shows a "File" label badge in the header, a file icon followed by the destination path in monospace (e.g. `.env.local`), and the descriptive text "— uploaded by the agent, replayed from storage". The Checks sub-section below shows a single auto-attached path_exists check.](./images/step-file-card.png)
+
+They're easier to edit, easier to inspect, and don't bloat your command
+field.
+
+## Examples
+
+### Standard pnpm project
+
+```
+1. Install dependencies      pnpm install        check: path_exists node_modules
+2. Generate Prisma client    pnpm db:generate    check: path_exists node_modules/.prisma/client
+```
+
+### Monorepo with codegen
+
+```
+1. Install dependencies   pnpm install                   check: path_exists node_modules
+2. Build shared types     pnpm --filter shared build     check: path_exists packages/shared/dist
+3. Generate API client    pnpm --filter web codegen      check: file_contains src/api.ts "export"
+```
+
+### Project with a setup script
+
+```
+1. Install dependencies   pnpm install            check: path_exists node_modules
+2. Run setup script       ./scripts/setup.sh      check: command_succeeds ./scripts/verify.sh
+```

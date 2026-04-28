@@ -1,0 +1,185 @@
+# Checks
+
+A **check** is a tiny test attached to a [step](./steps.md). It answers
+one question: *"did this step do what it was supposed to do?"*
+
+Checks pull double duty:
+
+1. **Before** the step runs, we test them. If they all pass, we **skip**
+   the step (it's already done — don't waste time redoing it).
+2. **After** the step runs, we test them again. If any fail, the step
+   itself is marked failed.
+
+This is what makes setup replays fast and trustworthy: a clean replay can
+skip every step whose checks already pass, and a step that "succeeds"
+without its checks passing is treated as broken.
+
+## Anatomy of a check
+
+| Field      | What it is                                                   |
+| ---------- | ------------------------------------------------------------ |
+| **Type**   | One of the six types listed below                            |
+| **Params** | Type-specific key/value parameters                           |
+
+In the editor, you pick the type from a dropdown and the params shown
+adjust accordingly.
+
+![Screenshot of the checks sub-section inside a step card. Shows the "Checks" header with the explanatory text "— run after the command to verify it actually succeeded" and an "Add check" button on the right. Below it: two stacked check rows. The first is a path_exists check with a "Type" dropdown (showing "path_exists") and a single "path" param input (`node_modules`). The second is a command_succeeds check with a longer command in its single param. Each row has a small X button to remove it.](./images/checks-editor.png)
+
+## How many checks per step?
+
+At least one. A step without checks runs every time (no skip path) and
+isn't verified after (we just trust the exit code). Both are usually
+mistakes.
+
+For most steps, one check is enough. The simplest pattern: pair an install
+step with a `path_exists` check on the directory it produces.
+
+## The six check types
+
+### `path_exists`
+
+Passes when a file or directory exists at the given path.
+
+| Param  | Required | Description                       |
+| ------ | -------- | --------------------------------- |
+| `path` | yes      | Path relative to the project root |
+
+```
+type:   path_exists
+params: { path: "node_modules" }
+```
+
+**Use when:** an install or build step produces a known file or directory.
+This is the most common check.
+
+### `command_exists`
+
+Passes when a binary is on the `PATH`.
+
+| Param     | Required | Description                  |
+| --------- | -------- | ---------------------------- |
+| `command` | yes      | Binary name (e.g. `pnpm`)    |
+
+```
+type:   command_exists
+params: { command: "prisma" }
+```
+
+**Use when:** a step installs a CLI tool and the next step needs to call
+it. Don't use this for binaries that are already in the sandbox by default
+(`node`, `npm`, `git`, etc.) — they'll always be there.
+
+### `command_succeeds`
+
+Passes when a shell command exits with code 0.
+
+| Param     | Required | Description     |
+| --------- | -------- | --------------- |
+| `command` | yes      | Shell command   |
+
+```
+type:   command_succeeds
+params: { command: "pnpm exec prisma migrate status" }
+```
+
+**Use when:** the existence of a file isn't enough — you want to actually
+*run* something to confirm state. Useful for migration status, schema
+validity, lockfile freshness.
+
+The command runs in the same shell context as a step (cwd = project root,
+your env vars in scope).
+
+### `command_output_contains`
+
+Passes when a command's combined stdout/stderr contains a substring.
+
+| Param      | Required | Description                       |
+| ---------- | -------- | --------------------------------- |
+| `command`  | yes      | Shell command to run              |
+| `contains` | yes      | Substring to look for             |
+
+```
+type:   command_output_contains
+params: { command: "node --version", contains: "v20." }
+```
+
+**Use when:** version-pinning, or asserting that a command reports the
+right state.
+
+### `file_contains`
+
+Passes when a file's content matches a pattern.
+
+| Param     | Required | Default | Description                                       |
+| --------- | -------- | ------- | ------------------------------------------------- |
+| `file`    | yes      |         | Path relative to project root                     |
+| `pattern` | yes      |         | Substring (or regex if `regex: "true"`)           |
+| `regex`   | no       | `false` | Set to `"true"` to treat `pattern` as a regex     |
+
+```
+type:   file_contains
+params: { file: ".env.local", pattern: "API_BASE_URL" }
+```
+
+```
+type:   file_contains
+params: { file: "tsconfig.json", pattern: "\"strict\"\\s*:\\s*true", regex: "true" }
+```
+
+**Use when:** you wrote a file (via a [file step](./files.md) or a script)
+and want to assert a key is present, or validate the format of a generated
+config.
+
+### `file_newer_than`
+
+Passes when one file's modification time is more recent than another's.
+
+| Param  | Required | Description                            |
+| ------ | -------- | -------------------------------------- |
+| `file` | yes      | The file you expect to be newer        |
+| `than` | yes      | The file it should be newer than       |
+
+```
+type:   file_newer_than
+params: { file: "dist/index.js", than: "src/index.ts" }
+```
+
+**Use when:** you want to skip a build step if the output is already
+up-to-date with respect to its input. Like a tiny built-in `make`.
+
+## Putting it together: idempotent steps
+
+The point of checks is to make steps **idempotent at the setup-config
+level**. Even if the underlying command isn't safe to re-run, wrapping it
+with a "skip if already done" check makes replays fast and safe.
+
+Example — a step that downloads a tool and would fail on second run
+(`already exists`):
+
+```
+name:    Install task runner
+command: curl -L https://example.com/task -o ./bin/task && chmod +x ./bin/task
+checks:
+  - type: path_exists
+    params: { path: "bin/task" }
+```
+
+On the first replay, `bin/task` doesn't exist, so the check fails, the
+step runs, and the post-step check passes. On every subsequent replay, the
+pre-step check passes and the step is skipped. The download command is
+never re-run after the first time.
+
+## When checks lie to you
+
+Two common pitfalls:
+
+**Too loose.** A check on the install directory existing (`path_exists
+node_modules`) doesn't notice if the install was *partial*. If you've had
+flaky installs, consider tightening the check —
+`command_succeeds: pnpm install --offline` is a stronger signal.
+
+**Too strict.** A check that depends on details that legitimately vary
+(file mtime, exact line count, version-string-with-build-number) will
+fail spuriously and make your replays unreliable. Aim for checks that
+test *intent*, not *exact bytes*.

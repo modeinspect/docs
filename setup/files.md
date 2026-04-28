@@ -1,0 +1,137 @@
+# File steps
+
+A **file step** is a step that, instead of running a command, drops a file
+you've uploaded into a specific place inside the sandbox. Use it for files
+that need to exist for your project to run, but aren't (and shouldn't be)
+committed to your repo.
+
+The classic case: `.env.local`. Your app needs it to start, but you don't
+push it to GitHub.
+
+## What you upload, what we do with it
+
+You pick a local file in the editor, give it:
+
+| Field    | What it is                                                     |
+| -------- | -------------------------------------------------------------- |
+| **Name** | A human label like "Local environment file"                    |
+| **Path** | Where to write the file in the sandbox, relative to the project root |
+
+![Screenshot of the "Upload setup files" panel in the editor. Top header reads "Upload setup files" with a hint on the right "replayed from storage, no need to commit them". Inside a bordered card: a "Choose file..." button on the left. After picking a file, the panel shows the picked filename and size, then two inputs side-by-side — "Step name" (filled with "Create .env.local") and "Destination path" (filled in monospace with `.env.local`) — and a primary "Upload" button on the right with a discard X button next to it.](./images/file-uploader.png)
+
+When you click **Upload**, we:
+
+1. Store the file in our blob storage, scoped to your project.
+2. Add a file step to the config with that destination path.
+3. Auto-attach a `path_exists` [check](./checks.md) so we can tell whether
+   the file landed.
+
+On every fresh sandbox replay, we:
+
+1. Download the file from blob storage.
+2. Create the parent directory if it doesn't exist.
+3. Write the file at the path you specified.
+
+The file is treated as opaque bytes — we don't parse, transform, or
+template it.
+
+## When to use a file step
+
+✅ **Good fits:**
+
+- `.env.local` or any other env file your tooling reads from disk
+- Generated config files that are painful to recreate from scratch
+- Self-signed certificates or local-dev keys
+- Small fixture files your dev server needs
+
+❌ **Don't use for:**
+
+- **Secrets you wouldn't write into your repo.** File contents are stored
+  in our object storage and replayed in plaintext into every sandbox. Same
+  risk profile as committing the file. Use [env vars](./env-vars.md) for
+  values where that helps, but it has the same caveat — see that page.
+- **Large files.** The asset gets re-downloaded into every fresh sandbox.
+  Keep individual files under a few MB; for bigger artifacts, fetch them
+  in a setup step from a place that already hosts them.
+- **Anything that's actually in your repo.** If `tsconfig.json` is already
+  committed, you don't need a file step for it.
+- **Things that change often.** Every change means re-uploading. For
+  values that change frequently, env vars are easier to edit.
+
+## Path rules
+
+The destination path is relative to the project root and must not:
+
+- Be absolute (no leading `/`)
+- Use `..` to escape the project directory
+
+Both are blocked at upload time — you'll see an error if you try.
+
+Parent directories are created automatically; you don't need a separate
+`mkdir` step.
+
+## Examples
+
+### `.env.local` for a Next.js app
+
+```
+name: Local environment file
+path: .env.local
+```
+
+The file content might look like:
+
+```
+NEXT_PUBLIC_API_URL=https://api.example.com
+DATABASE_URL=postgres://...
+```
+
+### Vite app with a custom CA bundle
+
+```
+name: Dev CA bundle
+path: certs/dev-ca.pem
+```
+
+### Drizzle migration directory snapshot
+
+```
+name: Pre-generated migrations metadata
+path: drizzle/_meta/_journal.json
+```
+
+## Editing and re-uploading
+
+You can change the destination path of a file step in the editor without
+re-uploading — the same blob just gets written to the new path next
+replay.
+
+To change the file *contents*, upload again with the same name and path;
+the new upload replaces the old one.
+
+To remove a file step, delete it from the editor like any other step.
+We don't auto-delete the underlying blob until the project is deleted, so
+removing it from the config just means we stop replaying it.
+
+## File steps vs. shell steps that write files
+
+You *could* write `.env.local` with a shell step:
+
+```sh
+cat > .env.local <<EOF
+API_URL=...
+EOF
+```
+
+…but file steps are better for this:
+
+- **Easier to inspect.** The destination and intent are right there in the
+  editor; you don't have to read a heredoc.
+- **No quoting headaches.** Special characters in env values, multi-line
+  certificates, and binary blobs all just work.
+- **Editable without touching the command.** Change the upload, leave the
+  config alone.
+
+Use a shell step only when you need to *generate* the file dynamically
+(e.g. interpolating an env var), not when you just need to drop static
+bytes.

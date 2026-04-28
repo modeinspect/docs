@@ -1,0 +1,95 @@
+# Codebase setup
+
+Before Modeinspect can render your project, it needs to know how to **install
+your dependencies and start your dev server** inside a fresh sandbox — every
+time you (or a teammate) opens the project. This page explains why setup
+exists, what it produces, and the two ways to fill it in.
+
+If you just want to get going, jump to **[Auto setup](./auto-setup.md)** —
+that's the path that asks an AI agent to figure things out for you. If
+auto setup didn't work, or you'd rather drive, read **[Manual
+setup](./manual-setup.md)**.
+
+## Why setup exists
+
+Locally, getting a project running is muscle memory: clone the repo, run
+`pnpm install`, drop in a `.env.local`, run `pnpm dev`, open
+`localhost:3000`. You don't think about it.
+
+Modeinspect runs your project in a remote **sandbox** — a fresh Linux VM
+that we spin up on demand. The sandbox has no terminal you can poke at, and
+there's no persistent shell session you can leave commands running in. So we
+need a recipe up front: a list of commands and files that, when replayed on
+a clean machine, produce a working dev server.
+
+That recipe is your **setup config**. Once it exists and verifies cleanly,
+we can rebuild your environment in seconds, every time.
+
+![Screenshot of the full setup config editor panel in the Modeinspect dashboard, showing all five sections stacked vertically: Setup steps (with two example shell steps and their checks), Upload setup files (with the file picker), Dev server (command + port inputs), and Environment variables (a couple of KEY=VALUE rows). The panel header reads "Setup config" with an "Action required" pill in the top right.](./images/setup-config-overview.png)
+
+A side note on why we don't just give you a terminal in the browser: even if
+we did, we'd still need to know which of the things you typed are
+*meaningful*. Did `cd packages/web` and `ls` and `echo $PATH` contribute to
+your project working? Or were they just you looking around? The setup
+config is the explicit answer to that question — it captures only the
+commands that actually *do something*.
+
+## What setup produces
+
+Setup config is a small JSON document with five sections. You'll see all of
+these in the editor and in the deeper docs below:
+
+| Section            | What it is                                                            |
+| ------------------ | --------------------------------------------------------------------- |
+| **Steps**          | Ordered shell commands that build your project (`pnpm install`, etc.) |
+| **Checks**         | Tests that prove each step worked (and let us skip already-done work) |
+| **File steps**     | Files we upload once and replay into the sandbox (e.g. `.env.local`)  |
+| **Dev server**     | The command + port that starts your app                               |
+| **Env vars**       | Key/value pairs injected into every step and the dev server           |
+
+Each has its own page below.
+
+## Two ways to fill it in
+
+### Auto setup (the agent does it)
+
+We launch an AI agent inside a fresh sandbox with your codebase. It looks
+around, tries the obvious things (npm/pnpm/yarn/bun install, then your
+detected dev script), and records each step it takes. When it's done, you
+review what it produced and either save it or send the agent back to fix
+something.
+
+This works for ~most JavaScript/TypeScript projects without intervention.
+Read [Auto setup](./auto-setup.md) for the full flow, including what
+happens when the agent gets stuck.
+
+### Manual setup (you fill in the form)
+
+Open the setup editor and add the steps yourself. Faster than the agent if
+you already know your project; mandatory if your project is unusual enough
+that the agent gives up. The editor has the same shape as the auto-setup
+output — same steps, same checks — so anything the agent could produce, you
+can produce too.
+
+Read [Manual setup](./manual-setup.md) for the mental model, then dive into
+the per-section pages:
+
+- **[Steps](./steps.md)** — shell commands like `pnpm install`
+- **[Checks](./checks.md)** — verifying that a step actually worked
+- **[File steps](./files.md)** — uploading config files like `.env.local`
+- **[Dev server](./dev-server.md)** — how we start your app
+- **[Environment variables](./env-vars.md)** — secrets, API keys, config
+
+## Which one should I use?
+
+| Situation                                                            | Use      |
+| -------------------------------------------------------------------- | -------- |
+| You're not sure what your project needs to run                       | Auto     |
+| Standard JS/TS stack with `package.json` and a familiar dev script   | Auto     |
+| You already know exactly what to type and want to skip the wait      | Manual   |
+| Auto setup ran but failed verification                               | Manual (edit + retry) |
+| You have non-obvious build steps (codegen, native binaries, etc.)    | Manual   |
+| You need to upload files (`.env.local`, certificates) the agent can't | Manual   |
+
+The two paths are not exclusive — you can start with auto setup, then edit
+what it produced manually before saving.
