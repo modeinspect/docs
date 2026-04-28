@@ -14,6 +14,19 @@
         "tab": "Guides",
         "groups": [
           {
+            "group": "Setup",
+            "pages": [
+              "setup/setup",
+              "setup/auto-setup",
+              "setup/manual-setup",
+              "setup/steps",
+              "setup/checks",
+              "setup/files",
+              "setup/dev-server",
+              "setup/env-vars"
+            ]
+          },
+          {
             "group": "Getting started",
             "pages": [
               "index",
@@ -106,15 +119,15 @@
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
