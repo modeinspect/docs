@@ -1,0 +1,120 @@
+---
+title: 'Editing setup config'
+description: 'How to change the setup config of a codebase after the initial setup is done'
+---
+
+The setup config you saved during initial setup isn't permanent. As your
+project changes — a new env var, a new build step, a moved dev port — you
+can edit the config any time without redoing the whole flow.
+
+## When you'd edit the config
+
+Common reasons:
+
+- **A new env var.** You've added a feature that reads
+  `process.env.STRIPE_KEY` and the dev server now crashes without it.
+- **A new setup step.** The project picked up a new tool that needs
+  initialization — a Prisma generate, a Tailwind safelist build, a
+  bundled CSS prep step.
+- **The dev server moved.** You changed the port in `package.json` (or
+  added a flag) and Modeinspect is probing the wrong one.
+- **An updated `.env.local`.** A value rotated, or you added a new key.
+- **Something stopped working.** A previously-clean replay started
+  failing because of a project change you've since pushed.
+
+You don't need to edit the config when you push regular code changes —
+those flow through automatically the next time someone opens the project
+in a fresh sandbox.
+
+## Opening the editor
+
+From the codebase's dashboard, open the **⋯** menu in the top-left header
+(next to the codebase title) and click **Edit setup config**.
+
+![Screenshot of the codebase dashboard header with the kebab menu open. The header shows the codebase name on the left, a small icon button (the menu trigger) right next to it, and the dropdown panel showing entries: a primary "Edit setup config" item with a slider icon, a "Delete codebase" item at the bottom separated by a divider. The Edit item is highlighted with a hover/focus ring.](./images/edit-config-menu.png)
+
+A modal opens with the same form you saw during initial setup —
+[steps](./steps.md), [file steps](./file-steps.md),
+[dev server](./dev-server.md), [env vars](./env-vars.md), and the
+[checks](./checks.md) attached to each step.
+
+![Screenshot of the Edit setup config dialog. A wide modal titled "Edit setup config" with the subtitle "Changes are dry-run on a fresh sandbox before they're saved. Save unlocks once a verification finishes clean." The body shows the full SetupConfigForm: a Steps section with 3 step cards stacked, a Files section, a Dev server panel with command + port, and an Env vars section. Footer has three buttons: a ghost "Cancel" on the left, a subtle "Verify" in the middle, and a primary "Update" on the right (disabled, grayed out).](./images/edit-config-dialog.png)
+
+## Editing safely
+
+Editing the config doesn't break anything in flight. While you're in the
+dialog:
+
+- Your codebase keeps running its **current** config — projects that
+  open in fresh sandboxes get the saved version, not your edits.
+- Closing the dialog without saving discards your changes. Nothing
+  persists until you click **Update**.
+
+The dialog uses the same Verify-then-Update flow as initial setup:
+
+1. Make your changes.
+2. Click **Verify**. We dry-run the new config in a fresh sandbox — every
+   step, file, env var — and watch the dev server come up.
+3. If verification passes, **Update** unlocks. Click it to promote the
+   new config.
+
+**Update is gated on a clean verify.** You can't save a config that
+hasn't been proven to work end-to-end. This is intentional — it stops
+broken configs from rolling out to teammates who open the project after
+you.
+
+![Screenshot of the Edit setup config dialog with the green "Verification passed" banner visible at the top of the form, the form fields in their post-verify state, and the footer's "Update" button now enabled (highlighted with a coloured outline / annotation pointing at it).](./images/edit-config-verify-passed.png)
+
+### When verification fails
+
+If a step you changed (or one downstream of it) fails the dry-run, you'll
+see a red "Verification failed" banner naming the step that broke, and
+the step itself shows its exit code and output inline.
+
+Fix the step in place and click **Re-verify**. Update stays disabled
+until verification passes.
+
+If verification gets stuck, a **Cancel** button appears next to the
+"Verifying on a fresh sandbox" panel after about two minutes — useful
+when you've realised something is wrong with your edits and want to bail
+out instead of waiting for the timeout.
+
+### What changes are off-limits
+
+You can edit:
+
+- All your steps (add, remove, reorder, edit commands and checks)
+- File steps and uploaded blobs
+- The dev server command and port
+- Env vars
+- Step names and check params
+
+You can't edit:
+
+- The synthetic Tailwind step we append automatically — it's hidden from
+  the editor and re-appended on every save.
+- The codebase's source repo or path. To change those, create a new
+  codebase.
+
+## Uploading a new file
+
+The file step uploader works the same as during initial setup: pick a
+file, give it a destination path inside the project, click Upload. The
+new file is added as a step and an automatic
+`path_exists` [check](./checks.md) is attached so we'll know if the file
+landed correctly on a fresh sandbox.
+
+To replace an existing file step's contents, upload a new file with the
+same name and path — the new upload overwrites the old blob. The blob
+storage is private to your codebase.
+
+→ [Read more about file steps](./file-steps.md)
+
+## After saving
+
+When **Update** finishes, the dialog closes and a small toast confirms
+the new config is saved. Anyone who opens this codebase in a fresh
+sandbox from now on will get the new config; sessions that are already
+running keep their existing one until they next replay.
+
+You can re-open the editor and make more changes any time — no limit.

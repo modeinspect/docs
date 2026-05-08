@@ -1,17 +1,38 @@
 ---
 title: 'Codebase setup'
-description: 'Before Modeinspect can render your project, it needs to know how to install your dependencies and start your dev server inside a fresh sandbox'
+description: 'How Modeinspect gets your project running, from picking a repo to a live dev server'
 ---
 
 Before Modeinspect can render your project, it needs to know how to **install
-your dependencies and start your dev server** inside a fresh sandbox — every
-time you (or a teammate) opens the project. This page explains why setup
-exists, what it produces, and the two ways to fill it in.
+your dependencies and start your dev server** inside a fresh sandbox. This
+page is the high-level tour of how that happens — what you do, what we do,
+and what the screens look like along the way.
 
-If you just want to get going, jump to **[Auto setup](./auto-setup.md)** —
-that's the path that asks an AI agent to figure things out for you. If
-auto setup didn't work, or you'd rather drive, read **[Manual
-setup](./manual-setup.md)**.
+If you just want to get going, click **New Codebase** in the dashboard and
+follow the prompts — we'll do as much as we can automatically. The pages
+below are here for when something needs your attention.
+
+## The journey at a glance
+
+A new codebase walks through five phases. Most projects sail through the
+first four without you needing to do anything.
+
+1. **You add the codebase** — pick a GitHub repo or upload a folder.
+   → [Starting a setup](./starting.md)
+2. **We check it can run on Modeinspect** — your project needs to be a
+   React or Next.js app with Tailwind. → [Eligibility](./starting.md#eligibility-check)
+3. **We spin up a clean sandbox** — an isolated Linux VM where setup runs.
+   Your local files are never touched. → [Sandbox provisioning](./starting.md#sandbox-provisioning)
+4. **We try a quick auto-setup** — install dependencies and start the dev
+   server. For most projects, that's all it takes. → [Minimal setup](./starting.md#minimal-setup)
+5. **If we can't finish on our own, you decide what's next** — fill in the
+   missing details yourself, hand it off to an AI agent, or invite a
+   teammate to help. → [Auto setup](./auto-setup.md), [Manual setup](./manual-setup.md)
+
+When the dev server comes up, your codebase is ready and you can start
+building.
+
+![Screenshot of the full setup flow stitched together: four cards arranged left-to-right showing (1) the New Codebase entry with GitHub picker + Upload, (2) the eligibility/path-selection card, (3) the "running minimal setup" progress card, and (4) the "Your codebase is ready!" completion card. Light arrows connect them, with a labelled side-branch off card 3 reading "if minimal setup needs your input → SimpleDashboard".](./images/setup-journey-overview.png)
 
 ## Why setup exists
 
@@ -26,21 +47,15 @@ need a recipe up front: a list of commands and files that, when replayed on
 a clean machine, produce a working dev server.
 
 That recipe is your **setup config**. Once it exists and verifies cleanly,
-we can rebuild your environment in seconds, every time.
+we can rebuild your environment in seconds, every time you (or a teammate)
+opens the project.
 
 ![Screenshot of the full setup config editor panel in the Modeinspect dashboard, showing all five sections stacked vertically: Setup steps (with two example shell steps and their checks), Upload setup files (with the file picker), Dev server (command + port inputs), and Environment variables (a couple of KEY=VALUE rows). The panel header reads "Setup config" with an "Action required" pill in the top right.](./images/setup-config-overview.png)
-
-A side note on why we don't just give you a terminal in the browser: even if
-we did, we'd still need to know which of the things you typed are
-*meaningful*. Did `cd packages/web` and `ls` and `echo $PATH` contribute to
-your project working? Or were they just you looking around? The setup
-config is the explicit answer to that question — it captures only the
-commands that actually *do something*.
 
 ## What setup produces
 
 Setup config is a small JSON document with five sections. You'll see all of
-these in the editor and in the deeper docs below:
+these in the editor.
 
 | Section            | What it is                                                            |
 | ------------------ | --------------------------------------------------------------------- |
@@ -50,49 +65,75 @@ these in the editor and in the deeper docs below:
 | **Dev server**     | The command + port that starts your app                               |
 | **Env vars**       | Key/value pairs injected into every step and the dev server           |
 
-Each has its own page below.
+Each has its own page in the reference section below.
 
-## Two ways to fill it in
+## How you'll fill it in
 
-### Auto setup (the agent does it)
+Setup config gets filled in either by you, by our AI agent, or by both
+working together.
 
-We launch an AI agent inside a fresh sandbox with your codebase. It looks
-around, tries the obvious things (npm/pnpm/yarn/bun install, then your
-detected dev script), and records each step it takes. When it's done, you
-review what it produced and either save it or send the agent back to fix
-something.
+### The fast path: you don't fill it in
 
-This works for ~most JavaScript/TypeScript projects without intervention.
-Read [Auto setup](./auto-setup.md) for the full flow, including what
-happens when the agent gets stuck.
+For a standard JS/TS project (React or Next + Tailwind, common package
+manager, no special build steps, no missing env vars), our minimal auto-
+setup is enough. You click **New Codebase**, wait a couple of minutes, and
+the project is ready. No editing, no decisions.
 
-### Manual setup (you fill in the form)
+### When the fast path isn't enough
 
-Open the setup editor and add the steps yourself. Faster than the agent if
-you already know your project; mandatory if your project is unusual enough
-that the agent gives up. The editor has the same shape as the auto-setup
-output — same steps, same checks — so anything the agent could produce, you
-can produce too.
+If minimal setup hits something it can't figure out — an env var your dev
+server expects, a config file that's not in your repo, a setup script the
+agent should run — we pause and ask what to do. You have three options:
 
-Read [Manual setup](./manual-setup.md) for the mental model, then dive into
-the per-section pages:
+- **Show the details and fill it in yourself** ([Manual setup](./manual-setup.md)).
+  You see the editor, add the steps / files / env vars you know are
+  missing, and click Verify.
+- **Let the agent take over** ([Auto setup](./auto-setup.md)). An AI agent
+  jumps into your sandbox, looks around, tries the obvious things, and asks
+  you when it's stuck. Most projects finish here.
+- **Invite a teammate** — if you're a designer and your project has setup
+  steps only your developer would know, you can share a link and they can
+  pick up where you left off. → [Inviting a teammate](#inviting-a-teammate)
+
+The three options are not exclusive: you can hand it to the agent, then
+edit what it produced, then verify, before saving.
+
+## Editing setup config later
+
+Once your codebase is set up, you don't have to re-do the whole flow if
+something changes. You can edit the setup config directly from the
+codebase's dashboard at any time — to add a new step, rotate an env var,
+upload a new `.env.local`, change the dev server port, anything.
+→ [Editing setup config](./edit-config.md)
+
+## Inviting a teammate
+
+You'll see an **Ask Colleague to Help** button in the setup header (and on
+the New Codebase screen, before you've staged anything). It generates a
+shareable link — your teammate clicks it and lands in the same setup
+session you're in, with full access to the editor, the agent, and any
+pending agent questions.
+
+Useful when:
+
+- You don't have GitHub admin and need a developer to connect the
+  organization first.
+- The agent is asking for a value (an API key, a database URL) that only
+  your developer knows.
+- You're stuck on a step and want a second pair of eyes.
+
+The teammate needs to be in the same Modeinspect organization. The link
+stops working once the session completes.
+
+![Screenshot of the "Ask Colleague to Help" dialog. A modal with the title "Ask Colleague to Help", a one-line explanation ("Share this link with a teammate so they can jump into this setup session and help you get unstuck."), and below it a dark code-block containing the share URL with a small copy-to-clipboard icon button on the right.](./images/setup-share-link.png)
+
+## Reference
+
+Once you're in the editor — whether during initial setup or editing later —
+each section of the config has its own deep dive:
 
 - **[Steps](./steps.md)** — shell commands like `pnpm install`
 - **[Checks](./checks.md)** — verifying that a step actually worked
-- **[File steps](./files.md)** — uploading config files like `.env.local`
+- **[File steps](./file-steps.md)** — uploading config files like `.env.local`
 - **[Dev server](./dev-server.md)** — how we start your app
 - **[Environment variables](./env-vars.md)** — secrets, API keys, config
-
-## Which one should I use?
-
-| Situation                                                            | Use      |
-| -------------------------------------------------------------------- | -------- |
-| You're not sure what your project needs to run                       | Auto     |
-| Standard JS/TS stack with `package.json` and a familiar dev script   | Auto     |
-| You already know exactly what to type and want to skip the wait      | Manual   |
-| Auto setup ran but failed verification                               | Manual (edit + retry) |
-| You have non-obvious build steps (codegen, native binaries, etc.)    | Manual   |
-| You need to upload files (`.env.local`, certificates) the agent can't | Manual   |
-
-The two paths are not exclusive — you can start with auto setup, then edit
-what it produced manually before saving.

@@ -1,0 +1,211 @@
+---
+title: 'Starting a setup'
+description: 'Adding a codebase, the eligibility check, the sandbox, and the first auto-setup attempt'
+---
+
+This page walks through everything that happens between clicking **New
+Codebase** and either landing on a working dev server or being asked to
+help. If you've never set up a codebase before, start here.
+
+## Adding a codebase
+
+You have two ways to bring a codebase into Modeinspect: connect a **GitHub
+repository** or **upload a folder** from your computer.
+
+![Screenshot of the New Codebase entry card. A small centered modal-like card titled "New Codebase" with the subtitle "Connect a repository or upload a local folder." The body shows two stacked options: a "GitHub Repository" label with a dropdown reading "Select a repository", an "or" divider, and an upload drop zone below reading "Drop a folder or zip here, or click to browse". Footer has "Ask Colleague to Help" on the left and a primary "Start Setup" button on the right.](./images/setup-new-card.png)
+
+### From GitHub
+
+If your team has connected GitHub already, you'll see a dropdown of
+repositories you have access to. Pick one and click **Start Setup**.
+
+If your repository isn't in the list — or no repositories are connected
+yet — click **Add from GitHub** to install the Modeinspect app on your
+GitHub organization. This opens GitHub in a new tab where you'll choose
+which repos Modeinspect can read.
+
+> **Heads up — you might need a developer.** Installing the GitHub app
+> usually requires admin access on the GitHub organization. If you don't
+> have admin, ask a developer on your team to install it. Once they do,
+> the repository will appear in the dropdown for everyone in your
+> Modeinspect organization.
+
+A faster handoff: click **Ask Colleague to Help** in the bottom-left of
+the New Codebase card and send the link to a developer. They'll see the
+same New Codebase screen, can install the GitHub app under their account,
+and start the setup directly from there. → [Inviting a teammate](./index.md#inviting-a-teammate)
+
+### Uploading a folder or ZIP
+
+If you don't want to (or can't) go through GitHub, drop a local copy of
+your project instead.
+
+![Screenshot of the codebase upload drop zone in its empty state. A bordered, dashed rectangular area with a folder icon centered, a primary line reading "Drop a folder or .zip here", and a smaller secondary line reading "or click to browse". Below the drop zone, a faint hint reads "Files stay between your browser and Modeinspect".](./images/setup-upload-dropzone.png)
+
+You can:
+
+- **Click the drop zone** to pick a folder. (On Chrome / Edge / Safari you
+  get a folder picker; on browsers without folder-picker support you get
+  the OS file dialog and we walk the directory client-side.)
+- **Drag a folder** from Finder or Explorer onto the drop zone — or
+  anywhere in the page.
+- **Drag a `.zip` file** onto the drop zone. We unpack it server-side; you
+  don't need to extract it first.
+
+What goes up: every file in the folder you picked, except files matched by
+your repo's `.gitignore` (so `node_modules/`, `dist/`, `.env*`, etc. stay
+on your machine). If your project doesn't have a `.gitignore`, sensible
+defaults apply.
+
+When the upload finishes, click **Start Setup**.
+
+## Eligibility check
+
+Once the codebase is in, the first thing we do is check whether your
+project is one Modeinspect can render. You'll see a brief
+"Checking eligibility…" screen.
+
+![Screenshot of the setup intake card during the eligibility check. A centered card titled with the codebase name, subtitle "Checking eligibility…", a small spinner icon, and an explanatory line: "Looking for a React or Next.js app with Tailwind CSS configured."](./images/setup-eligibility-checking.png)
+
+We're looking for two things:
+
+1. A **React or Next.js** app — detected from `package.json` dependencies.
+2. **Tailwind CSS** — also detected from `package.json` (`tailwindcss` in
+   `dependencies` or `devDependencies`).
+
+Both have to be present. If only one is, or neither, eligibility fails.
+
+### If eligibility fails
+
+You'll see a "No eligible codebases found" message with a Retry button.
+Common reasons:
+
+- **No Tailwind in the project.** Modeinspect renders projects via their
+  Tailwind setup — we need it. Add `tailwindcss` to your project, push,
+  and try again.
+- **You picked the wrong repo.** The repo you connected isn't a frontend
+  app at all — maybe it's the wrong one in your monorepo, or a backend
+  repo. Go back and pick a different repo, or upload a folder that
+  contains the frontend.
+- **A different framework.** We support React and Next.js today; Vue,
+  Svelte, etc. aren't supported yet.
+
+> **Don't see the framework you'd expect?** If your repo *does* have React
+> + Tailwind but we say it doesn't, the most likely cause is a non-
+> standard `package.json` location. Open the **Ask Colleague to Help**
+> button and have a developer take a look.
+
+### Picking the right app (monorepo)
+
+If your repo is a monorepo (a `pnpm-workspace.yaml` / `yarn workspaces` /
+similar setup), there might be more than one eligible app inside. We
+detect them all and ask you to pick one.
+
+![Screenshot of the setup intake card showing the codebase-path picker. The card title shows the repo name, the subtitle reads "Pick the app you want to set up". Below it is a dropdown labelled "Codebase path" — open and showing three options: each option has a primary label (the app name like "web", "admin", "marketing") with the full path (`/apps/web`, `/apps/admin`, `/apps/marketing`) shown in muted text below. A primary "Continue" button is at the bottom right.](./images/setup-monorepo-picker.png)
+
+The list shows each app's `name` from its `package.json` along with the
+folder it lives in (e.g. `apps/web`). Pick one and click **Continue**.
+
+You can only set up one app per codebase. If you need both `apps/web` and
+`apps/admin` running in Modeinspect, you'll create two separate codebases
+pointing at the same repo with different paths.
+
+## Sandbox provisioning
+
+Once the codebase is eligible, we get a fresh Linux VM ready for it. The
+"Provisioning sandbox…" screen runs through three sub-steps:
+
+- **Creating sandbox** — spinning up the VM
+- **Configuring** — setting up the right Node version, package managers,
+  etc.
+- **Downloading codebase** — pulling your code into the VM
+
+This usually takes 1–2 minutes the first time.
+
+![Screenshot of the setup working card during sandbox provisioning. A centered card showing the codebase name as title, a spinning loader, the message "Provisioning sandbox…" in bold, a smaller secondary line "Spinning up an isolated Linux VM and downloading your codebase", and a footer line "This usually takes 2-5 minutes."](./images/setup-provisioning.png)
+
+### Your code stays put
+
+The sandbox is **isolated**. Modeinspect never touches the files on your
+laptop or the GitHub repo itself.
+
+- For GitHub-connected repos, we read the code (we don't push back unless
+  you ask us to commit changes).
+- For uploaded folders / ZIPs, we keep the snapshot you sent us — your
+  local copy is untouched.
+- Anything the agent does inside the sandbox happens on a **disposable
+  copy**. Even if the agent installs a CLI you'd rather not have, deletes
+  a file, or wrecks a `node_modules`, the next sandbox starts clean.
+
+Think of the sandbox as a sketchpad: we replay your setup config on a new
+sketchpad each time someone opens the project. Whatever happens during
+setup is contained.
+
+## Minimal setup
+
+With the sandbox up, we try the obvious thing: **install dependencies and
+start the dev server**.
+
+![Screenshot of the setup working card during minimal setup. A centered card with the codebase name, a spinner, the message "Running initial setup…" in bold, and a smaller secondary line "Installing dependencies and starting your dev server."](./images/setup-minimal-running.png)
+
+For a standard project, that's:
+
+1. Detect the package manager from your lockfile (`pnpm-lock.yaml`,
+   `yarn.lock`, `package-lock.json`, `bun.lockb`).
+2. Run the appropriate install command (`pnpm install` etc.).
+3. Run your `dev` script from `package.json`.
+4. Probe the configured port to confirm the server is up.
+
+If all four work, the setup is done. You'll see the **Your codebase is
+ready!** screen next, and you can start a project.
+
+### When minimal setup isn't enough
+
+A lot of real projects need more than install + dev to run. Common
+reasons minimal setup pauses:
+
+- **Missing `.env.local`** — the dev server crashes at startup because an
+  env var isn't set.
+- **A code-gen step** — the project expects you to run `pnpm
+  db:generate`, `pnpm codegen`, or similar before `pnpm dev` works.
+- **A custom build step** — shared packages need to be built first
+  (typical in monorepos).
+- **The dev server listens on a non-default port** that we couldn't
+  detect.
+
+When that happens, we pause and switch to the **decision card** — the
+small "Initial setup needs your help" panel. From there you have three
+choices.
+
+![Screenshot of the SimpleDashboard "Initial setup needs your help" card. The card has the repo name as title, a subtitle, an amber "Action required" warning box with copy ("Automated setup didn't complete on its own. We tried installing dependencies and running your dev server, but it didn't come up cleanly."), and a footer with two buttons side-by-side: a ghost "Show details" button on the left and a primary "Let the agent take over" button on the right. The page header above the card has an "Ask Colleague to Help" button on the right.](./images/setup-decision-card.png)
+
+- **Show details** — opens the full setup editor, with whatever the
+  minimal run did (or tried to do) already filled in. You add the missing
+  pieces and click Verify.
+  → [Manual setup](./manual-setup.md)
+- **Let the agent take over** — hands the sandbox to an AI agent that
+  reads your project, tries the obvious next things, and writes down what
+  worked. → [Auto setup](./auto-setup.md)
+- **Ask Colleague to Help** (in the page header) — share a link with a
+  teammate who can pick up where you left off.
+  → [Inviting a teammate](./index.md#inviting-a-teammate)
+
+You can switch between any of these mid-flight. Show details first, then
+hand it to the agent. Or hand it to the agent, see what it produced, and
+edit the result.
+
+## When the dev server comes up
+
+Whichever path you took, success looks the same: the dev server probes
+clean and the **Your codebase is ready!** card replaces the setup screen.
+
+![Screenshot of the SetupSessionCompleted card. A centered card with a checkmark icon at the top, a primary "Your codebase is ready!" heading, a subtitle "You can now start using your codebase.", a small section showing the codebase name and source (e.g. "GitHub repo · acme/web"), and a single primary "Create a new project" button at the bottom.](./images/setup-completed.png)
+
+Click **Create a new project** to start working — Modeinspect spins up a
+fresh sandbox using the config you just saved, opens it in a project
+view, and you're off.
+
+If you ever need to change something — add a step, fix an env var, swap
+out a file — you don't have to redo any of this. Open the codebase, click
+the **⋯** menu in its dashboard, and pick **Edit setup config**.
+→ [Editing setup config](./edit-config.md)

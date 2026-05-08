@@ -39,7 +39,7 @@ There's no scoping or per-step env — everything is global to the run.
 
 - Production credentials
 - Anything you'd be unhappy seeing in a screenshot of the editor
-- Long blobs (certificates, private keys) — use a [file step](./files.md)
+- Long blobs (certificates, private keys) — use a [file step](./file-steps.md)
   instead
 
 ## Working with env vars in your steps
@@ -60,7 +60,7 @@ PORT=$PORT pnpm dev
 
 ## Working with env vars in your file steps
 
-[File step](./files.md) contents are static — we do **not** template them
+[File step](./file-steps.md) contents are static — we do **not** template them
 with your env vars. If your `.env.local` needs to reference a value, write
 it literally into the file before uploading.
 
