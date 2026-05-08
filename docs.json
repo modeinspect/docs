@@ -14,8 +14,10 @@
         "group": "Setup",
         "pages": [
           "setup/index",
+          "setup/starting",
           "setup/auto-setup",
           "setup/manual-setup",
+          "setup/edit-config",
           "setup/steps",
           "setup/checks",
           "setup/file-steps",
