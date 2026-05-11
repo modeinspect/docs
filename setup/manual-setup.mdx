@@ -1,32 +1,32 @@
 ---
 title: 'Manual setup'
-description: 'When you want to fill in the setup config by hand instead of asking the agent'
+description: 'When you want to take over from the agent and finish the setup config by hand'
 ---
 
-Manual setup is what happens when you click **Show details** on the
-"Initial setup needs your help" card — you open the full editor and fill
-in the missing pieces yourself.
+Manual setup is what happens when you open the full editor and fill in
+the setup config yourself — adding the steps, files, dev server, and
+env vars the agent couldn't infer on its own.
 
 You'd reach for manual setup when:
 
-- You already know exactly what your project needs to run (faster than
-  waiting for the agent).
 - The agent ran but couldn't finish, and you can finish it.
+- Verification failed and you can see exactly what's wrong faster than
+  another agent pass.
 - Your project has unusual build steps the agent wouldn't infer
   (codegen, native compilation, custom CLIs).
 - You need to upload secret files (`.env.local`, certificates) the agent
   doesn't have access to.
 
-You can also start with the agent and switch to manual halfway, or vice
-versa — they edit the same config.
+You can switch between the agent and the editor freely — they edit the
+same config.
 
 ## Where the editor lives
 
 Two ways into the same editor:
 
-1. **During setup**, after minimal setup pauses: click **Show details**
-   on the SimpleDashboard card. The editor opens inside the setup
-   session.
+1. **During setup**, after the agent pauses on a failed verification:
+   the setup dashboard renders the config editor inline, with whatever
+   the agent recorded already filled in.
 2. **After setup is done**, from the codebase's dashboard: click the
    **⋯** menu → **Edit setup config**. → [Editing setup config](./edit-config.md)
 

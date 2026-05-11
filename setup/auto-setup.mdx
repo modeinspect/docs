@@ -1,27 +1,21 @@
 ---
 title: 'Auto setup'
-description: 'When minimal setup gets stuck, hand it to an AI agent that figures the rest out for you'
+description: 'When minimal setup falls short, an AI agent takes over automatically and figures the rest out for you'
 ---
 
-Auto setup is the path where you let an AI agent finish the setup for
-you. It's the right choice when minimal setup paused and you don't know
-exactly what's missing — or you just don't want to fill in the editor by
-hand.
+Auto setup is what runs when our quick install-and-launch attempt
+([minimal setup](./starting.md#minimal-setup)) doesn't fully bring your
+dev server up on its own. There's no extra click — the moment minimal
+setup hits something it can't handle, we hand the sandbox to an AI
+agent automatically.
 
-You opt into auto setup explicitly. After [minimal setup](./starting.md#minimal-setup)
-pauses, you'll see a small card with two options:
-
-- **Show details** — opens the editor for [manual setup](./manual-setup.md)
-- **Let the agent take over** — starts auto setup
-
-This page is about that second button.
-
-![Screenshot of the SimpleDashboard pause card with the "Let the agent take over" button highlighted with a coloured outline / annotation. The card title reads "Initial setup needs your help", with the amber Action-required box and the two-button footer; the right-hand "Let the agent take over" button has a thin glow / call-out arrow pointing at it.](./images/auto-setup-entry.png)
+You'll see the dashboard switch from the "Running initial setup…" card
+to a live view of the agent at work.
 
 ## What the agent does
 
-Once you click **Let the agent take over**, an AI agent gets dropped into
-your sandbox with read/write access to your codebase and a shell. It:
+An AI agent gets dropped into your sandbox with read/write access to
+your codebase and a shell. It:
 
 1. **Reads your project** — looks at `package.json`, your README, the
    structure of the repo, anything that hints at how to run things.
@@ -73,8 +67,8 @@ If verification fails, the session pauses with a "Verification failed"
 banner and the failing step highlighted. From there you can:
 
 - Fix the step in the editor and re-run **Verify**
-- Click **Let the agent take over** again to give the agent another pass
-  with the failure as context
+- Click **Let the agent try again** to give the agent another pass with
+  the failure as context
 - Hand it off to a teammate via the share link
 
 ![Screenshot of the SetupDashboard with a failed verification banner. Top of the panel shows a red banner titled "Verification failed" with the message "\"Generate Prisma client\" failed. See the step below for the exact error." Below it, the steps list shows two passing steps and one with a red status, expanded to reveal the error output. Footer has Verify and Save buttons; Save is disabled.](./images/auto-setup-verify-failed.png)

@@ -162,7 +162,7 @@ ready!** screen next, and you can start a project.
 ### When minimal setup isn't enough
 
 A lot of real projects need more than install + dev to run. Common
-reasons minimal setup pauses:
+reasons minimal setup falls short:
 
 - **Missing `.env.local`** — the dev server crashes at startup because an
   env var isn't set.
@@ -173,26 +173,15 @@ reasons minimal setup pauses:
 - **The dev server listens on a non-default port** that we couldn't
   detect.
 
-When that happens, we pause and switch to the **decision card** — the
-small "Initial setup needs your help" panel. From there you have three
-choices.
+When that happens, we hand the sandbox to an AI agent automatically —
+no extra click. The agent reads your project, tries the obvious next
+things, and writes down what worked. → [Auto setup](./auto-setup.md)
 
-![Screenshot of the SimpleDashboard "Initial setup needs your help" card. The card has the repo name as title, a subtitle, an amber "Action required" warning box with copy ("Automated setup didn't complete on its own. We tried installing dependencies and running your dev server, but it didn't come up cleanly."), and a footer with two buttons side-by-side: a ghost "Show details" button on the left and a primary "Let the agent take over" button on the right. The page header above the card has an "Ask Colleague to Help" button on the right.](./images/setup-decision-card.png)
-
-- **Show details** — opens the full setup editor, with whatever the
-  minimal run did (or tried to do) already filled in. You add the missing
-  pieces and click Verify.
-  → [Manual setup](./manual-setup.md)
-- **Let the agent take over** — hands the sandbox to an AI agent that
-  reads your project, tries the obvious next things, and writes down what
-  worked. → [Auto setup](./auto-setup.md)
-- **Ask Colleague to Help** (in the page header) — share a link with a
-  teammate who can pick up where you left off.
-  → [Inviting a teammate](./index.md#inviting-a-teammate)
-
-You can switch between any of these mid-flight. Show details first, then
-hand it to the agent. Or hand it to the agent, see what it produced, and
-edit the result.
+The agent only stops to ask when it can't decide on its own — for
+example, when it needs a secret value or a file only you have. If
+you'd rather a teammate took over, the **Ask Colleague to Help** button
+in the setup header generates a shareable link.
+→ [Inviting a teammate](./index.md#inviting-a-teammate)
 
 ## When the dev server comes up
 

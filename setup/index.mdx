@@ -25,14 +25,14 @@ first four without you needing to do anything.
    Your local files are never touched. → [Sandbox provisioning](./starting.md#sandbox-provisioning)
 4. **We try a quick auto-setup** — install dependencies and start the dev
    server. For most projects, that's all it takes. → [Minimal setup](./starting.md#minimal-setup)
-5. **If we can't finish on our own, you decide what's next** — fill in the
-   missing details yourself, hand it off to an AI agent, or invite a
-   teammate to help. → [Auto setup](./auto-setup.md), [Manual setup](./manual-setup.md)
+5. **If we can't finish on our own, an AI agent takes over automatically**
+   — it reads your project, tries the obvious next things, and only
+   stops to ask you when it has to. → [Auto setup](./auto-setup.md)
 
 When the dev server comes up, your codebase is ready and you can start
 building.
 
-![Screenshot of the full setup flow stitched together: four cards arranged left-to-right showing (1) the New Codebase entry with GitHub picker + Upload, (2) the eligibility/path-selection card, (3) the "running minimal setup" progress card, and (4) the "Your codebase is ready!" completion card. Light arrows connect them, with a labelled side-branch off card 3 reading "if minimal setup needs your input → SimpleDashboard".](./images/setup-journey-overview.png)
+![Screenshot of the full setup flow stitched together: four cards arranged left-to-right showing (1) the New Codebase entry with GitHub picker + Upload, (2) the eligibility/path-selection card, (3) the "running minimal setup" progress card, and (4) the "Your codebase is ready!" completion card. Light arrows connect them, with a labelled side-branch off card 3 reading "if minimal setup falls short → AI agent takes over automatically".](./images/setup-journey-overview.png)
 
 ## Why setup exists
 
@@ -69,8 +69,9 @@ Each has its own page in the reference section below.
 
 ## How you'll fill it in
 
-Setup config gets filled in either by you, by our AI agent, or by both
-working together.
+Setup config gets filled in either by our minimal auto-setup, by our AI
+agent picking up where minimal left off, or by you editing what the
+agent produced.
 
 ### The fast path: you don't fill it in
 
@@ -82,21 +83,23 @@ the project is ready. No editing, no decisions.
 ### When the fast path isn't enough
 
 If minimal setup hits something it can't figure out — an env var your dev
-server expects, a config file that's not in your repo, a setup script the
-agent should run — we pause and ask what to do. You have three options:
+server expects, a config file that's not in your repo, a setup script
+that needs to run before the dev server — we hand the sandbox to an AI
+agent automatically. → [Auto setup](./auto-setup.md)
 
-- **Show the details and fill it in yourself** ([Manual setup](./manual-setup.md)).
-  You see the editor, add the steps / files / env vars you know are
-  missing, and click Verify.
-- **Let the agent take over** ([Auto setup](./auto-setup.md)). An AI agent
-  jumps into your sandbox, looks around, tries the obvious things, and asks
-  you when it's stuck. Most projects finish here.
-- **Invite a teammate** — if you're a designer and your project has setup
-  steps only your developer would know, you can share a link and they can
-  pick up where you left off. → [Inviting a teammate](#inviting-a-teammate)
+The agent jumps into your sandbox, looks around, tries the obvious
+things, and asks you only when it has to (a secret value, a file only
+you have, a choice between equally-valid options). Most projects finish
+here without further input.
 
-The three options are not exclusive: you can hand it to the agent, then
-edit what it produced, then verify, before saving.
+If you'd rather take over by hand — or the agent finishes but
+verification fails on what it produced — the full editor is one click
+away. You can edit what the agent recorded, run Verify, and save.
+→ [Manual setup](./manual-setup.md)
+
+If your project has setup steps only your developer would know, you can
+share a link from the setup header and they can pick up where you left
+off. → [Inviting a teammate](#inviting-a-teammate)
 
 ## Editing setup config later
 
